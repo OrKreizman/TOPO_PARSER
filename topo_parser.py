@@ -3,7 +3,6 @@ import multiprocessing
 import os
 import pickle
 import re
-import time
 from datetime import datetime
 from tqdm import tqdm
 from itertools import islice
@@ -141,7 +140,6 @@ class InfinibandTopologyParser:
         :return: None
         """
         visited_devices = set()
-        time.sleep(10)
         with open(self.OUTPUT_FILE_NAME.format(self.file_name), 'w') as output_file:
             output_file.write(self.OUTPUT_FILE_START_MESSAGE.format(self.file_path, self.parsing_time))
             for device in self.devices.values():
