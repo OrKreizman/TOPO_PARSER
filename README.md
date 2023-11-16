@@ -1,3 +1,6 @@
+Absolutely, here's the updated README file with instructions for installing the required packages:
+
+---
 
 # Topology Parser
 
@@ -35,9 +38,7 @@ Prints the parsed Infiniband network topology.
 ```
 Quit the program. 
 
-## Infiniband Network Topology File Explanation
-
-
+...
 
 ## Important Notes
 
@@ -58,5 +59,15 @@ python topo_parser.py –f topofile
 # Quit the program
 –q
 ```
+
+## Installing Required Packages
+
+To install the required packages for running `topo_parser`, use the following command:
+
+```bash
+pip install -r requirements.txt
+```
+
+This command will install the necessary dependencies specified in the `requirements.txt` file, ensuring the utility runs successfully.
 
 ---
