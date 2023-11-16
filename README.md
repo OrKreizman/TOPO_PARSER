@@ -1,6 +1,3 @@
-Absolutely, here's the updated README file with instructions for installing the required packages:
-
----
 
 # Topology Parser
 
