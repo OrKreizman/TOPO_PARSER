@@ -174,6 +174,7 @@ def main():
     topo_parser = None
 
     def run_parsing(file_path):
+
         nonlocal topo_parser
         topo_parser = InfinibandTopologyParser(file_path)
         topo_parser.parse()
