@@ -8,6 +8,34 @@ from tqdm import tqdm
 from itertools import islice
 
 
+class Connection:
+    """
+    Class represent a device's connection
+    """
+
+    def __init__(self, connection_data):
+        """
+        Build a Connection object
+        :param connection_data: a line with structured data about the connection for specific device
+        """
+        optional_port_id_pattern = '(\([\w]+\))?'
+        port_number_pattern = '(\[\d+\])'
+        port_pattern = port_number_pattern + optional_port_id_pattern
+        destination_name_pattern = '"(.*?)"'
+        pattern = r'{}\s+{}{}'.format(port_pattern, destination_name_pattern, port_pattern)
+        match = re.match(pattern, connection_data)
+        if match:
+            self.port1, self.port_id1, self.destination_name, self.port2, self.port_id2 = match.groups()
+        else:
+            raise ValueError(f"Unexpected line structure for connection")
+
+    def __str__(self):
+        return f'Connected to: {self.destination_name}, Ports:={self.port1}=>{self.port2}\n'
+
+    def __eq__(self, other):
+        return self.port1 == other.port1 and self.port2 == other.port2 and self.destination_name == other.destination_name
+
+
 class Device:
     """
     A Class Represents a device
@@ -15,16 +43,16 @@ class Device:
     Host = 'Host'
     Switch = 'Switch'
 
-    def __init__(self, host_chunk_data):
+    def __init__(self, device_chunk_data):
         """
         Build Device obj.
-        :param host_chunk_data: Information lines about the device from the topology file
+        :param device_chunk_data: Information lines about the device from the topology file
         """
-        self.name = host_chunk_data[4].split()[2][1:-1]
-        self.device_type = self.Host if self._is_host(host_chunk_data[4]) else self.Switch
-        self.sysimgguid = host_chunk_data[2][len("sysimgguid") + 1:]
+        self.name = device_chunk_data[4].split()[2][1:-1]
+        self.device_type = self.Host if self._is_host(device_chunk_data[4]) else self.Switch
+        self.sysimgguid = device_chunk_data[2][len("sysimgguid") + 1:]
         self.connections = list()  # list to enable duplicates as required
-        self.__get_connections(host_chunk_data=host_chunk_data)
+        self.__get_connections(host_chunk_data=device_chunk_data)
 
     @staticmethod
     def _is_host(fifth_line):
@@ -54,39 +82,12 @@ class Device:
             connection = Connection(host_chunk_data[i])
             self.connections.append(connection)
 
-
-
     def __str__(self):
         device_information = f'{self.device_type}:\n'
         device_information += f'sysimgguid={self.sysimgguid}\n'
         for connection in self.connections:
             device_information += str(connection)
         return device_information + '\n'
-
-
-class Connection:
-    """
-    Class represent a device's connection
-    """
-
-    def __init__(self, connection_data):
-        """
-        Build a Connection object
-        :param connection_data: a line with structured data about the connection for specific device
-        """
-        optional_port_id_pattern = '(\([\w]+\))?'
-        port_number_pattern = '(\[\d+\])'
-        port_pattern = port_number_pattern + optional_port_id_pattern
-        destination_name_pattern = '"(.*?)"'
-        pattern = r'{}\s+{}{}'.format(port_pattern, destination_name_pattern, port_pattern)
-        match = re.match(pattern, connection_data)
-        if match:
-            self.port1, self.port_id1, self.destination_name, self.port2, self.port_id2 = match.groups()
-        else:
-            raise ValueError(f"Unexpected line structure for connection")
-
-    def __str__(self):
-        return f'Connected to: {self.destination_name}, Ports:={self.port1}=>{self.port2}\n'
 
 
 class InfinibandTopologyParser:
@@ -194,10 +195,14 @@ def main():
     args = parser.parse_args()
 
     while True:
-        if args.file: run_parsing(args.file)
-        elif args.print_topology: run_printing(topo_parser)
-        elif args.quit: break
-        else: parser.print_help()
+        if args.file:
+            run_parsing(args.file)
+        elif args.print_topology:
+            run_printing(topo_parser)
+        elif args.quit:
+            break
+        else:
+            parser.print_help()
         user_input = input("Enter command (-h for help): ").split()
         args = parser.parse_args(user_input)
 
