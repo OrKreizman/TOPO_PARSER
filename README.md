@@ -22,6 +22,7 @@ Prints usage information and exits.
 ```
 Parses the specified Infiniband network topology file (`topofile`). 
 This option extracts and stores the network connections for further analysis.
+To ensure successful parsing, place the topofile in the current directory or specify the full path to the file.
 
 ### Print Parsed Topology
 ```bash
