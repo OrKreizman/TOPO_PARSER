@@ -52,7 +52,7 @@ class Device:
         self.name = host_chunk_data[4].split()[2][1:-1]
         self.device_type = self.Host if self._is_host(host_chunk_data[4]) else self.Switch
         self.sysimgguid = host_chunk_data[2][len("sysimgguid") + 1:]
-        self.connections = list() # list to enable duplicates as required
+        self.connections = list()  # list to enable duplicates as required
         self.__get_connections(host_chunk_data=host_chunk_data)
 
     def __str__(self):
@@ -87,13 +87,14 @@ class Connection:
     def __str__(self):
         return f'Connected to: {self.destination_name}, Ports:={self.port1}=>{self.port2}\n'
 
+
 class InfinibandTopologyParser:
     """
     Represents an Infiniband Topology Parser object
     """
-    OUTPUT_FILE_NAME = '{} output.txt'
+    OUTPUT_FILE_NAME = '{}_output.txt'
     OUTPUT_FILE_START_MESSAGE = "### Printing all connections in the network\n" \
-                                "### From file: {}\n### Parsed at{}\n\n"
+                                "### From file: {}\n### Data was parsed at: {}\n\n"
 
     def __init__(self, file_path):
         """
@@ -146,8 +147,7 @@ class InfinibandTopologyParser:
             for device in self.devices.values():
                 visited_devices.add(device.name)
                 output_file.write(str(device))
-            print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}') # Report to user
-
+            print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}')  # Report to user
 
     def print_devices_connections_BFS(self):
         """
@@ -164,47 +164,39 @@ class InfinibandTopologyParser:
                 if device.name in visited_devices: continue
                 visited_devices.add(device.name)
                 output_file.write(str(device))
-                to_visit.extend(connect.destination_name for connect in device.connections if connect.destination_name not in visited_devices)
-            print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}') # Report to user
+                to_visit.extend(connect.destination_name for connect in device.connections if
+                                connect.destination_name not in visited_devices)
+            print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}')  # Report to user
 
 
 def main():
     topo_parser = None
 
-    def run_parsing(to_parse: bool, file_path):
-        if to_parse:
-            nonlocal topo_parser
-            topo_parser = InfinibandTopologyParser(file_path)
-            topo_parser.parse()
-            if not args.print_topology:
-                with open('topo_objects.pkl', 'wb') as file:
-                    pickle.dump(topo_parser, file)
+    def run_parsing(file_path):
+        nonlocal topo_parser
+        topo_parser = InfinibandTopologyParser(file_path)
+        topo_parser.parse()
+        if not args.print_topology:
+            with open('topo_objects.pkl', 'wb') as file:
+                pickle.dump(topo_parser, file)
 
-    def run_printing(to_print: bool, topo_parser):
-        if to_print:
-            if not topo_parser:
-                with open('topo_objects.pkl', 'rb') as file:
-                    topo_parser = pickle.load(file)
-            print_process = multiprocessing.Process(target=topo_parser.print_devices_connections)
-            print_process.start()
+    def run_printing(topo_parser):
+        if not topo_parser:
+            with open('topo_objects.pkl', 'rb') as file:
+                topo_parser = pickle.load(file)
+        print_process = multiprocessing.Process(target=topo_parser.print_devices_connections)
+        print_process.start()
 
     parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
     parser.add_argument('-f', '--file', help='Specify the topology file')  # , required=True
     parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
     args = parser.parse_args()
 
-    to_print = args.print_topology
-    to_parse = args.file is not None
-    file_path = args.file
-
     while True:
-        run_parsing(to_parse, file_path)
-        run_printing(to_print, topo_parser)
+        if args.file: run_parsing(args.file)
+        if args.print_topology: run_printing(topo_parser)
         user_input = input("Enter command (-h for help): ").split()
-        to_print = user_input[0] == '-p'
-        to_parse = user_input[0] == '-f'
-        if to_parse: file_path = user_input[1]
-
+        args = parser.parse_args(user_input)
 
 
 if __name__ == '__main__':
