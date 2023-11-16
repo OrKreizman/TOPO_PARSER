@@ -41,12 +41,12 @@ Prints the parsed Infiniband network topology.
 
 ```bash
 # Print usage information
-topo_parser –h
+python topo_parser.py –h
 
 # Parse a topology file
-topo_parser –f topofile
+python topo_parser.py –f topofile
 
-# Print the parsed topology
-topo_parser –p
+# Print the parsed topology after the program is running
+–p
 ```
 
