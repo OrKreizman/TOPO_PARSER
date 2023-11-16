@@ -11,20 +11,20 @@ python topo_parser.py <options>
 
 ### Print Help
 ```bash
-topo_parser –h
+–h
 ```
 Prints usage information and exits.
 
 ### Parse Topology File
 ```bash
-topo_parser –f topofile
+–f topofile
 ```
 Parses the specified Infiniband network topology file (`topofile.topo`). 
 This option extracts and stores the network connections for further analysis.
 
 ### Print Parsed Topology
 ```bash
-topo_parser –p
+–p
 ```
 Prints the parsed Infiniband network topology. 
 
