@@ -15,6 +15,17 @@ class Device:
     Host = 'Host'
     Switch = 'Switch'
 
+    def __init__(self, host_chunk_data):
+        """
+        Build Device obj.
+        :param host_chunk_data: Information lines about the device from the topology file
+        """
+        self.name = host_chunk_data[4].split()[2][1:-1]
+        self.device_type = self.Host if self._is_host(host_chunk_data[4]) else self.Switch
+        self.sysimgguid = host_chunk_data[2][len("sysimgguid") + 1:]
+        self.connections = list()  # list to enable duplicates as required
+        self.__get_connections(host_chunk_data=host_chunk_data)
+
     @staticmethod
     def _is_host(fifth_line):
         """
@@ -43,16 +54,7 @@ class Device:
             connection = Connection(host_chunk_data[i])
             self.connections.append(connection)
 
-    def __init__(self, host_chunk_data):
-        """
-        Build Device obj.
-        :param host_chunk_data: Information lines about the device from the topology file
-        """
-        self.name = host_chunk_data[4].split()[2][1:-1]
-        self.device_type = self.Host if self._is_host(host_chunk_data[4]) else self.Switch
-        self.sysimgguid = host_chunk_data[2][len("sysimgguid") + 1:]
-        self.connections = list()  # list to enable duplicates as required
-        self.__get_connections(host_chunk_data=host_chunk_data)
+
 
     def __str__(self):
         device_information = f'{self.device_type}:\n'
@@ -188,11 +190,14 @@ def main():
     parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
     parser.add_argument('-f', '--file', help='Specify the topology file')  # , required=True
     parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
+    parser.add_argument('-q', '--quit', action='store_true', help='Quit the program')
     args = parser.parse_args()
 
     while True:
         if args.file: run_parsing(args.file)
-        if args.print_topology: run_printing(topo_parser)
+        elif args.print_topology: run_printing(topo_parser)
+        elif args.quit: break
+        else: parser.print_help()
         user_input = input("Enter command (-h for help): ").split()
         args = parser.parse_args(user_input)
 
