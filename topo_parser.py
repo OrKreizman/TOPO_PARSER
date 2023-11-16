@@ -1,28 +1,27 @@
-
 import argparse
-import pickle
 import multiprocessing
-
+import os
+import pickle
 import re
-from tqdm import tqdm
-import threading
 import time
+from datetime import datetime
+from tqdm import tqdm
 from itertools import islice
 
 
 class Device:
     """
-    Represent a device
+    A Class Represents a device
     """
-    Host = 1
-    Switch = 2
+    Host = 'Host'
+    Switch = 'Switch'
 
     @staticmethod
     def _is_host(fifth_line):
         """
         Check if data chunk describe a Host
         :param fifth_line: the fifth line of the chunk data
-        :return:
+        :return: True if Host False otherwise
         """
         return fifth_line.startswith("Ca")
 
@@ -31,53 +30,87 @@ class Device:
         """
         Check if data chunk describe a Switch
         :param fifth_line:
-        :return:
+        :return: True if Switch False otherwise
         """
         return fifth_line.startswith("Switch")
 
     def __get_connections(self, host_chunk_data):
+        """
+        Get all device connections from the data chunk and insert as Connections object to the field self.connections
+        :param host_chunk_data: Information lines about the device from the topology file
+        :return: None
+        """
         for i in range(5, len(host_chunk_data)):
             connection = Connection(host_chunk_data[i])
-            self.connections[connection.destination_name]=connection
+            self.connections.append(connection)
 
     def __init__(self, host_chunk_data):
+        """
+        Build Device obj.
+        :param host_chunk_data: Information lines about the device from the topology file
+        """
         self.name = host_chunk_data[4].split()[2][1:-1]
         self.device_type = self.Host if self._is_host(host_chunk_data[4]) else self.Switch
         self.sysimgguid = host_chunk_data[2][len("sysimgguid") + 1:]
-        self.connections = dict()
+        self.connections = list() # list to enable duplicates as required
         self.__get_connections(host_chunk_data=host_chunk_data)
+
+    def __str__(self):
+        device_information = f'{self.device_type}:\n'
+        device_information += f'sysimgguid={self.sysimgguid}\n'
+        for connection in self.connections:
+            device_information += str(connection)
+        return device_information + '\n'
 
 
 class Connection:
+    """
+    Class represent a device's connection
+    """
 
     def __init__(self, connection_data):
+        """
+        Build a Connection object
+        :param connection_data: a line with structured data about the connection for specific device
+        """
         optional_port_id_pattern = '(\([\w]+\))?'
         port_number_pattern = '(\[\d+\])'
         port_pattern = port_number_pattern + optional_port_id_pattern
         destination_name_pattern = '"(.*?)"'
-        pattern = r'{}\s+{}{}'.format(port_pattern,destination_name_pattern,port_pattern)
+        pattern = r'{}\s+{}{}'.format(port_pattern, destination_name_pattern, port_pattern)
         match = re.match(pattern, connection_data)
         if match:
-            self.port1,self.port_id1,self.destination_name, self.port2, self.port_id2 = match.groups()
+            self.port1, self.port_id1, self.destination_name, self.port2, self.port_id2 = match.groups()
         else:
             raise ValueError(f"Unexpected line structure for connection")
 
+    def __str__(self):
+        return f'Connected to: {self.destination_name}, Ports:={self.port1}=>{self.port2}\n'
 
 class InfinibandTopologyParser:
+    """
+    Represents an Infiniband Topology Parser object
+    """
+    OUTPUT_FILE_NAME = '{} output.txt'
+    OUTPUT_FILE_START_MESSAGE = "### Printing all connections in the network\n" \
+                                "### From file: {}\n### Parsed at{}\n\n"
 
-    def __init__(self,file_path):
+    def __init__(self, file_path):
+        """
+        Build InfinibandTopologyParser object.
+        :param file_path: file path for the topology file to parse
+        """
         self.file_path = file_path
+        self.file_name = os.path.basename(file_path)
         self.devices = dict()
-        # self.currently_parsing = threading.Event()
+        self.parsing_time = datetime.now()
 
-    def parse(self):
-        # self.currently_parsing.clear()
-        for device_data in self.read_device_data():
-            device_obj = Device(device_data)
-            self.devices[device_obj.name]=device_obj
-        # self.currently_parsing.set()
-
-    def read_device_data(self):
+    def __file_chunk_generator(self):
+        """
+        Generator for reading the topology file chunk by chunk.
+        chunk - the group of lines describes specific device in the file.
+        :return:
+        """
         current_device_data = []
         with open(self.file_path, 'r') as file:
             file = islice(file, 5, None)
@@ -91,51 +124,89 @@ class InfinibandTopologyParser:
         if current_device_data:
             yield current_device_data
 
+    def parse(self):
+        """
+        Parse the given Topology file into the parser devices dict.
+        each device in the dict is of type Device(class)
+        :return: None
+        """
+        for device_data in self.__file_chunk_generator():
+            device_obj = Device(device_data)
+            self.devices[device_obj.name] = device_obj
 
-    def print_devices(self):
-        # self.currently_parsing.wait()
+    def print_devices_connections(self):
+        """
+        Print all topology connections (for each device) into the output file
+        :return: None
+        """
         visited_devices = set()
-        to_visit = [iter(self.devices).__next__()]
-        output_file = open(f'output.txt', 'w')
-        output_file.write(f'### printing all connections in the network\n### From file: {self.file_path}')
-        while len(visited_devices)!=len(self.devices):
-            device = self.devices[to_visit.pop(0)]
-            visited_devices.add(device.name)
-        # for device in self.devices.values():
-            device_information = 'Host:\n' if device.device_type==Device.Host else 'Switch:\n'
-            device_information += f'sysimgguid={device.sysimgguid}\n'
-            for connection in device.connections.values():
-                if connection.destination_name not in visited_devices: to_visit.append(connection.destination_name)
-                if connection.port1:
-                    device_information += f'Connected to: name={connection.destination_name}, Port_id:={connection.port1}\n'
-            output_file.write(device_information)
+        time.sleep(10)
+        with open(self.OUTPUT_FILE_NAME.format(self.file_name), 'w') as output_file:
+            output_file.write(self.OUTPUT_FILE_START_MESSAGE.format(self.file_path, self.parsing_time))
+            for device in self.devices.values():
+                visited_devices.add(device.name)
+                output_file.write(str(device))
+            print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}') # Report to user
+
+
+    def print_devices_connections_BFS(self):
+        """
+        Print all topology connections (for each device) into the output file
+        devices printed order is: BFS
+        :return: None
+        """
+        visited_devices = set()
+        to_visit = [iter(self.devices).__next__()]  # mark devices as visited to prevent infinity loop
+        with open(self.OUTPUT_FILE_NAME.format(self.file_name), 'w') as output_file:
+            output_file.write(self.OUTPUT_FILE_START_MESSAGE.format(self.file_path, self.parsing_time))
+            while len(visited_devices) != len(self.devices):
+                device = self.devices[to_visit.pop(0)]
+                if device.name in visited_devices: continue
+                visited_devices.add(device.name)
+                output_file.write(str(device))
+                to_visit.extend(connect.destination_name for connect in device.connections if connect.destination_name not in visited_devices)
+            print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}') # Report to user
+
+
+def main():
+    topo_parser = None
+
+    def run_parsing(to_parse: bool, file_path):
+        if to_parse:
+            nonlocal topo_parser
+            topo_parser = InfinibandTopologyParser(file_path)
+            topo_parser.parse()
+            if not args.print_topology:
+                with open('topo_objects.pkl', 'wb') as file:
+                    pickle.dump(topo_parser, file)
+
+    def run_printing(to_print: bool, topo_parser):
+        if to_print:
+            if not topo_parser:
+                with open('topo_objects.pkl', 'rb') as file:
+                    topo_parser = pickle.load(file)
+            print_process = multiprocessing.Process(target=topo_parser.print_devices_connections)
+            print_process.start()
+
+    parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
+    parser.add_argument('-f', '--file', help='Specify the topology file')  # , required=True
+    parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
+    args = parser.parse_args()
+
+    to_print = args.print_topology
+    to_parse = args.file is not None
+    file_path = args.file
+
+    while True:
+        run_parsing(to_parse, file_path)
+        run_printing(to_print, topo_parser)
+        user_input = input("Enter command (-h for help): ").split()
+        to_print = user_input[0] == '-p'
+        to_parse = user_input[0] == '-f'
+        if to_parse: file_path = user_input[1]
 
 
 
 if __name__ == '__main__':
     # file_path = ".\TopologyFiles\large_topo_file"
-    parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
-    parser.add_argument('-f', '--file', help='Specify the topology file') # , required=True
-    parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
-    args = parser.parse_args()
-
-    if args.file:
-        topo_parser = InfinibandTopologyParser(args.file)
-        parse_thread = threading.Thread(target=topo_parser.parse)
-        parse_thread.start()
-        parse_thread.join()
-        if not args.print_topology:
-            with open('topo_objects.pkl', 'wb') as file:
-                pickle.dump(topo_parser, file)
-    if args.print_topology:
-        if not args.file:
-            with open('topo_objects.pkl', 'rb') as file:
-                topo_parser = pickle.load(file)
-        print_thread = threading.Thread(target=topo_parser.print_devices)
-        print_thread.start()
-
-
-
-
-
-
+    main()
