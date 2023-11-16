@@ -1,7 +1,11 @@
 # Infiniband Topology Parser
 
 This Python utility, named `topo_parser`, is designed to parse Infiniband network topology files, discover network connections, and print them. 
-The program can be run from the command line with the following options:
+The program can be run from the command line using Python as follows:
+
+```bash
+python topo_parser.py <options>
+```
 
 ## Usage
 
@@ -13,7 +17,7 @@ Prints usage information and exits.
 
 ### Parse Topology File
 ```bash
-topo_parser –f topofile.topo
+topo_parser –f topofile
 ```
 Parses the specified Infiniband network topology file (`topofile.topo`). 
 This option extracts and stores the network connections for further analysis.
