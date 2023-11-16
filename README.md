@@ -1,3 +1,4 @@
+
 # Topology Parser
 
 This Python utility, named `topo_parser`, is designed to parse Infiniband network topology files, discover network connections, and print them. 
@@ -19,7 +20,7 @@ Prints usage information and exits.
 ```bash
 –f topofile
 ```
-Parses the specified Infiniband network topology file (`topofile.topo`). 
+Parses the specified Infiniband network topology file (`topofile`). 
 This option extracts and stores the network connections for further analysis.
 
 ### Print Parsed Topology
@@ -28,6 +29,11 @@ This option extracts and stores the network connections for further analysis.
 ```
 Prints the parsed Infiniband network topology. 
 
+### Quitting the Program
+```bash
+–q
+```
+Quit the program. 
 
 ## Infiniband Network Topology File Explanation
 
@@ -35,7 +41,7 @@ Prints the parsed Infiniband network topology.
 
 ## Important Notes
 
-- The utility is designed to report parsing progress to the user, allowing for the printing of the existing topology while still processing new topology data(using seperate process for printing).
+- The utility is designed to report parsing progress to the user, allowing for the printing of the existing topology while still parsing new topology data (using a separate process for printing).
 
 ## Example Usage
 
@@ -48,5 +54,9 @@ python topo_parser.py –f topofile
 
 # Print the parsed topology after the program is running
 –p
+
+# Quit the program
+–q
 ```
 
+---
