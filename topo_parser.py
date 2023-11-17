@@ -27,7 +27,7 @@ class Connection:
         if match:
             self.port1, self.port_id1, self.destination_name, self.port2, self.port_id2 = match.groups()
         else:
-            raise ValueError(f"Unexpected line structure for connection")
+            raise ValueError(f"Unexpected line structure for connection\nFor line:{connection_data}")
 
     def __str__(self):
         return f'Connected to: {self.destination_name}, Ports:={self.port1}=>{self.port2}\n'
@@ -48,11 +48,13 @@ class Device:
         Build Device obj.
         :param device_chunk_data: Information lines about the device from the topology file
         """
-        self.name = device_chunk_data[4].split()[2][1:-1]
+        name_match = re.search(r'"([^"]*)"', device_chunk_data[4])
+        sysimgguid_match = re.search(r'=(\w+)',device_chunk_data[2])
+        self.name = name_match.group(1)
+        self.sysimgguid = sysimgguid_match.group(1)
         self.device_type = self.Host if self._is_host(device_chunk_data[4]) else self.Switch
-        self.sysimgguid = device_chunk_data[2][len("sysimgguid") + 1:]
         self.connections = list()  # list to enable duplicates as required
-        self.__get_connections(device_chunk_data=device_chunk_data)
+        self.__get_connections(device_chunk_data)
 
     @staticmethod
     def _is_host(fifth_line):
@@ -83,11 +85,9 @@ class Device:
             self.connections.append(connection)
 
     def __str__(self):
-        device_information = f'{self.device_type}:\n'
-        device_information += f'sysimgguid={self.sysimgguid}\n'
-        for connection in self.connections:
-            device_information += str(connection)
-        return device_information + '\n'
+        return f"{self.device_type}:\n" \
+               f"sysimgguid={self.sysimgguid}\n" \
+               f"{''.join(str(connection) for connection in self.connections)}\n"
 
 
 class InfinibandTopologyParser:
@@ -116,12 +116,11 @@ class InfinibandTopologyParser:
         """
         current_device_data = []
         with open(self.file_path, 'r') as file:
-            file = islice(file, 5, None)
-            for line in tqdm(file):
-                if line.strip() == '':
-                    if current_device_data:
-                        yield current_device_data
-                        current_device_data = list()
+            file = islice(file, 5, None)  # skip the first 5 lines
+            for line in tqdm(file, desc='Read', unit=' lines'):
+                if line.strip() == '' and current_device_data:  # empty line indicates end of device
+                    yield current_device_data
+                    current_device_data = list()
                 else:
                     current_device_data.append(line)
         if current_device_data:
@@ -137,17 +136,17 @@ class InfinibandTopologyParser:
             device_obj = Device(device_data)
             self.devices[device_obj.name] = device_obj
 
-    def print_devices_connections(self):
+    def print_devices_connections(self, bfs: bool = False):
         """
         Print all topology connections (for each device) into the output file
         :return: None
         """
-        visited_devices = set()
+        if bfs:
+            self.print_devices_connections_BFS()
+            return
         with open(self.OUTPUT_FILE_NAME.format(self.file_name), 'w') as output_file:
             output_file.write(self.OUTPUT_FILE_START_MESSAGE.format(self.file_path, self.parsing_time))
-            for device in self.devices.values():
-                visited_devices.add(device.name)
-                output_file.write(str(device))
+            output_file.write('\n'.join(str(device) for device in self.devices.values()))
             print(f'Output printed to the file: {self.OUTPUT_FILE_NAME.format(self.file_name)}')  # Report to user
 
     def print_devices_connections_BFS(self):
@@ -156,8 +155,8 @@ class InfinibandTopologyParser:
         devices printed order is: BFS
         :return: None
         """
-        visited_devices = set()
-        to_visit = [iter(self.devices).__next__()]  # mark devices as visited to prevent infinity loop
+        visited_devices = set()  # mark devices as visited to prevent infinity loop
+        to_visit = [iter(self.devices).__next__()]  # start from first device
         with open(self.OUTPUT_FILE_NAME.format(self.file_name), 'w') as output_file:
             output_file.write(self.OUTPUT_FILE_START_MESSAGE.format(self.file_path, self.parsing_time))
             while len(visited_devices) != len(self.devices):
@@ -171,30 +170,42 @@ class InfinibandTopologyParser:
 
 
 def main():
-    topo_parser = None
 
     def run_parsing(file_path):
-
-        nonlocal topo_parser
+        """
+        Parse and save the result parsing object into topo_parser(main)
+        :param file_path: path for the file to parse
+        :return:
+        """
+        nonlocal topo_parser # enter the parsed object to the nonlocal topo_parser
         topo_parser = InfinibandTopologyParser(file_path)
         topo_parser.parse()
-        if not args.print_topology:
+        if not args.print_topology: # saves the parser object for a forward use
             with open('topo_objects.pkl', 'wb') as file:
                 pickle.dump(topo_parser, file)
 
     def run_printing(topo_parser):
+        """
+        Print connections from current parsing object if exists,
+        else print the last object saved into topo_objects.pkl (from previous parsing)
+        :param topo_parser: InfinibandTopologyParser object
+        :return:
+        """
         if not topo_parser:
             with open('topo_objects.pkl', 'rb') as file:
                 topo_parser = pickle.load(file)
         print_process = multiprocessing.Process(target=topo_parser.print_devices_connections)
         print_process.start()
 
+    #declare program arguments
     parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
     parser.add_argument('-f', '--file', help='Specify the topology file')
     parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
     parser.add_argument('-q', '--quit', action='store_true', help='Quit the program')
+
     args = parser.parse_args()
 
+    topo_parser = None
     while True:
         if args.file:
             run_parsing(args.file)
