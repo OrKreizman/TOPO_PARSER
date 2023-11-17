@@ -49,7 +49,7 @@ class Device:
         :param device_chunk_data: Information lines about the device from the topology file
         """
         name_match = re.search(r'"([^"]*)"', device_chunk_data[4])
-        sysimgguid_match = re.search(r'=(\w+)',device_chunk_data[2])
+        sysimgguid_match = re.search(r'=(\w+)', device_chunk_data[2])
         self.name = name_match.group(1)
         self.sysimgguid = sysimgguid_match.group(1)
         self.device_type = self.Host if self._is_host(device_chunk_data[4]) else self.Switch
@@ -108,14 +108,15 @@ class InfinibandTopologyParser:
         self.devices = dict()
         self.parsing_time = datetime.now()
 
-    def __file_chunk_generator(self):
+    @staticmethod
+    def file_chunk_generator(file_path):
         """
         Generator for reading the topology file chunk by chunk.
         chunk - the group of lines describes specific device in the file.
         :return:
         """
         current_device_data = []
-        with open(self.file_path, 'r') as file:
+        with open(file_path, 'r') as file:
             file = islice(file, 5, None)  # skip the first 5 lines
             for line in tqdm(file, desc='Read', unit=' lines'):
                 if line.strip() == '' and current_device_data:  # empty line indicates end of device
@@ -132,13 +133,14 @@ class InfinibandTopologyParser:
         each device in the dict is of type Device(class)
         :return: None
         """
-        for device_data in self.__file_chunk_generator():
+        for device_data in self.file_chunk_generator(self.file_path):
             device_obj = Device(device_data)
             self.devices[device_obj.name] = device_obj
 
     def print_devices_connections(self, bfs: bool = False):
         """
         Print all topology connections (for each device) into the output file
+        if the BFS flag is True prints in order of: BFS
         :return: None
         """
         if bfs:
@@ -170,17 +172,16 @@ class InfinibandTopologyParser:
 
 
 def main():
-
     def run_parsing(file_path):
         """
         Parse and save the result parsing object into topo_parser(main)
         :param file_path: path for the file to parse
         :return:
         """
-        nonlocal topo_parser # enter the parsed object to the nonlocal topo_parser
+        nonlocal topo_parser  # enter the parsed object to the nonlocal topo_parser
         topo_parser = InfinibandTopologyParser(file_path)
         topo_parser.parse()
-        if not args.print_topology: # saves the parser object for a forward use
+        if not args.print_topology:  # saves the parser object for a forward use
             with open('topo_objects.pkl', 'wb') as file:
                 pickle.dump(topo_parser, file)
 
@@ -197,7 +198,7 @@ def main():
         print_process = multiprocessing.Process(target=topo_parser.print_devices_connections)
         print_process.start()
 
-    #declare program arguments
+    # declare program arguments
     parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
     parser.add_argument('-f', '--file', help='Specify the topology file')
     parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
