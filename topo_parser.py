@@ -52,7 +52,7 @@ class Device:
         self.device_type = self.Host if self._is_host(device_chunk_data[4]) else self.Switch
         self.sysimgguid = device_chunk_data[2][len("sysimgguid") + 1:]
         self.connections = list()  # list to enable duplicates as required
-        self.__get_connections(host_chunk_data=device_chunk_data)
+        self.__get_connections(device_chunk_data=device_chunk_data)
 
     @staticmethod
     def _is_host(fifth_line):
@@ -72,14 +72,14 @@ class Device:
         """
         return fifth_line.startswith("Switch")
 
-    def __get_connections(self, host_chunk_data):
+    def __get_connections(self, device_chunk_data):
         """
         Get all device connections from the data chunk and insert as Connections object to the field self.connections
-        :param host_chunk_data: Information lines about the device from the topology file
+        :param device_chunk_data: Information lines about the device from the topology file
         :return: None
         """
-        for i in range(5, len(host_chunk_data)):
-            connection = Connection(host_chunk_data[i])
+        for i in range(5, len(device_chunk_data)):
+            connection = Connection(device_chunk_data[i])
             self.connections.append(connection)
 
     def __str__(self):
@@ -190,7 +190,7 @@ def main():
         print_process.start()
 
     parser = argparse.ArgumentParser(description='Infiniband Topology Parser')
-    parser.add_argument('-f', '--file', help='Specify the topology file')  # , required=True
+    parser.add_argument('-f', '--file', help='Specify the topology file')
     parser.add_argument('-p', '--print-topology', action='store_true', help='Print parsed topology')
     parser.add_argument('-q', '--quit', action='store_true', help='Quit the program')
     args = parser.parse_args()
