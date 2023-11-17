@@ -28,7 +28,7 @@ To ensure successful parsing, place the topofile in the current directory or spe
 ```bash
 –p
 ```
-Prints the parsed Infiniband network topology into a file named <topofile>_output.txt.
+Prints the parsed Infiniband network topology into a {file_name}.output file.
 
 ### Quitting the Program
 ```bash
@@ -69,3 +69,4 @@ pip install -r requirements.txt
 This command will install the necessary dependencies specified in the `requirements.txt` file, ensuring the utility runs successfully.
 
 ---
+
