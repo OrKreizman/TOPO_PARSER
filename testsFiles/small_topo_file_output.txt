@@ -1,0 +1,95 @@
+### Printing all connections in the network
+### From file: small_topo_file
+### Data was parsed at: 2023-11-17 11:02:59.965884
+
+Switch:
+sysimgguid=0xb8599f0300fc6de4
+Connected to: S-0002c903007b78b0, Ports:=[3]=>[1]
+Connected to: H-ec0d9a03007d7d0a, Ports:=[23]=>[1]
+Connected to: H-ec0d9a03007d7d0b, Ports:=[24]=>[1]
+Connected to: H-b8599f0300fc6dec, Ports:=[41]=>[1]
+
+
+Switch:
+sysimgguid=0x2c903007b78b0
+Connected to: S-b8599f0300fc6de4, Ports:=[1]=>[3]
+Connected to: H-e41d2d03005cf34c, Ports:=[3]=>[1]
+Connected to: H-e41d2d03005cf34d, Ports:=[5]=>[1]
+Connected to: H-0c42a103008b40d0, Ports:=[8]=>[1]
+Connected to: H-0c42a103008b40d1, Ports:=[9]=>[1]
+Connected to: H-b8599f03000a77d0, Ports:=[19]=>[1]
+Connected to: H-b8599f03000a77d1, Ports:=[20]=>[1]
+Connected to: S-0002c903007b78b0, Ports:=[25]=>[26]
+Connected to: S-0002c903007b78b0, Ports:=[26]=>[25]
+Connected to: S-0002c903007b78b0, Ports:=[28]=>[29]
+Connected to: S-0002c903007b78b0, Ports:=[29]=>[28]
+Connected to: H-248a0703002e61db, Ports:=[30]=>[1]
+Connected to: H-248a0703002e61da, Ports:=[31]=>[1]
+Connected to: H-0c42a103008b3bd0, Ports:=[33]=>[1]
+Connected to: H-0c42a103008b3bd1, Ports:=[34]=>[1]
+
+
+Host:
+sysimgguid=0xec0d9a03007d7d0a
+Connected to: S-b8599f0300fc6de4, Ports:=[1]=>[24]
+
+
+Host:
+sysimgguid=0xb8599f0300fc6de4
+Connected to: S-b8599f0300fc6de4, Ports:=[1]=>[41]
+
+
+Host:
+sysimgguid=0xec0d9a03007d7d0a
+Connected to: S-b8599f0300fc6de4, Ports:=[1]=>[23]
+
+
+Host:
+sysimgguid=0xc42a103008b3bd0
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[34]
+
+
+Host:
+sysimgguid=0xc42a103008b3bd0
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[33]
+
+
+Host:
+sysimgguid=0x248a0703002e61da
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[31]
+
+
+Host:
+sysimgguid=0x248a0703002e61da
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[30]
+
+
+Host:
+sysimgguid=0xb8599f03000a77d0
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[20]
+
+
+Host:
+sysimgguid=0xb8599f03000a77d0
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[19]
+
+
+Host:
+sysimgguid=0xc42a103008b40d0
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[9]
+
+
+Host:
+sysimgguid=0xe41d2d03005cf34c
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[5]
+
+
+Host:
+sysimgguid=0xe41d2d03005cf34c
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[3]
+
+
+Host:
+sysimgguid=0xc42a103008b40d0
+Connected to: S-0002c903007b78b0, Ports:=[1]=>[8]
+
