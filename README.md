@@ -28,7 +28,7 @@ To ensure successful parsing, place the topofile in the current directory or spe
 ```bash
 –p
 ```
-Prints the parsed Infiniband network topology. 
+Prints the parsed Infiniband network topology into a file named <topofile>_output.txt.
 
 ### Quitting the Program
 ```bash
